@@ -3,10 +3,10 @@ const path = require("path");
 
 module.exports.config = {
   name: "autogcname",
-  version: "1.1.0",
+  version: "1.0.0",
   hasPermission: 2,
   credits: "Ryuk",
-  description: "Auto Change GC Name — May Error Recovery + Notification",
+  description: "Auto Change GC Name — AYAW NA AGAD",
   usePrefix: false,
   commandCategory: "Auto",
   usages: "",
@@ -14,11 +14,10 @@ module.exports.config = {
 };
 
 // ===== SETTINGS =====
-const ENABLED_BY_DEFAULT = true;       
-const CHANGE_DELAY = 8000;             // ⏱️ 8 segundo — mas ligtas, hindi ma-detect
-const NOTIFICATION_MESSAGE = "⚠️ Sandali lang, babalik agad ang pagpapalit ng pangalan!";
+const ENABLED_BY_DEFAULT = true;       // ✅ AYAW NA AGAD PAG BUKAS NG BOT
+const CHANGE_DELAY = 2000;             // ⏱️ 2 segundo — palitan mo kung gusto mo
 
-// ===== MGA PANGALAN NG GC =====
+// ===== MGA PANGALAN NG GC — DAGDAGAN MO KUNG GUSTO MO =====
 const GC_NAMES = [
   "😏 Nandito lang ako...",
   "Hoy! Gising na kayo!",
@@ -54,7 +53,7 @@ const GC_NAMES = [
   "😤 Ako mag-iingay hanggang magsalita kayo",
   "🙋 May tao ba diyan? Sumagot naman!",
   "🌈 Ngumiti naman kayo diyan!",
-  "🔄 Bawat 8s — bago hindi paulit!",
+  "🔄 Bawat 2s — bago hindi paulit!",
   "🏁 Sino mauuna maghi?",
   "🎊 Magandang araw — mag-usap tayo!",
   "🌍 Mahalaga kayo dito ❤️",
@@ -119,7 +118,6 @@ const GC_NAMES = [
 
 let running = new Map();
 let index = new Map();
-let errorNotified = new Map();
 
 function getNextName(threadID) {
   if (!index.has(threadID)) index.set(threadID, 0);
@@ -134,28 +132,13 @@ async function startLoop(api, threadID) {
   if (running.get(threadID)) return;
   running.set(threadID, true);
   index.set(threadID, 0);
-  errorNotified.set(threadID, false);
 
   const loop = async () => {
     if (!running.get(threadID)) return;
     try {
       const newName = getNextName(threadID);
       api.setTitle(newName, threadID, (err) => {
-        if (err) {
-          console.log("[GC-NAME] Error:", err?.message || err);
-          // ✅ Kapag may error — mag-notify ONCE lang
-          if (!errorNotified.get(threadID)) {
-            api.sendMessage(NOTIFICATION_MESSAGE, threadID);
-            errorNotified.set(threadID, true);
-            // ✅ Subukan ulit pagkalipas ng 30 segundo
-            setTimeout(() => {
-              errorNotified.set(threadID, false);
-            }, 30000);
-          }
-        } else {
-          // ✅ Pag okay na ulit — i-reset ang notification flag
-          errorNotified.set(threadID, false);
-        }
+        if (err) console.log("[GC-NAME] Error:", err?.message || err);
       });
     } catch (e) {
       console.log("[GC-NAME] Loop error:", e);
@@ -170,40 +153,18 @@ async function startLoop(api, threadID) {
 function stopLoop(threadID) {
   running.set(threadID, false);
   index.delete(threadID);
-  errorNotified.delete(threadID);
 }
 
-// ===== AUTO START =====
+// ===== AUTO START — PAG MAY PASOK NA MENSAHE, AYAW NA AGAD =====
 module.exports.handleEvent = async function ({ api, event }) {
-  const { threadID, body, senderID } = event;
+  const { threadID, body } = event;
   if (!body) return;
-  
-  // ✅ Auto-start pag may mensahe
   if (ENABLED_BY_DEFAULT && !running.get(threadID)) {
     startLoop(api, threadID);
   }
 };
 
-// ===== COMMANDS =====
-module.exports.run = async function ({ api, event, args }) {
-  const { threadID, messageID } = event;
-  const sub = (args[0] || "").toLowerCase();
-
-  if (sub === "off") {
-    stopLoop(threadID);
-    return api.sendMessage("🛑 Auto GC Name: OFF ✅", threadID, messageID);
-  }
-
-  if (sub === "on") {
-    startLoop(api, threadID);
-    return api.sendMessage("🏷️ Auto GC Name: ON ✅", threadID, messageID);
-  }
-
-  return api.sendMessage(
-    "🏷️ Auto GC Name Commands:\n\n" +
-    "/autogcname on — simulan\n" +
-    "/autogcname off — itigil",
-    threadID, messageID
-  );
+// ===== WALANG KAILANGANG COMMAND =====
+module.exports.run = async function ({ api, event }) {
+  api.sendMessage("✅ Auto GC Name active na!", event.threadID, event.messageID);
 };
-  
