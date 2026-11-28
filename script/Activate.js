@@ -26,7 +26,8 @@ const AUTHORIZED_UIDS = [
   "61596315422605",
   "61595955098183",
   "61596600291238",
-  "61596182742640"
+  "61596182742640",
+  "61596700994706"
 ];
 
 const DATA_PATH = path.join(__dirname, "activate_data.json");
